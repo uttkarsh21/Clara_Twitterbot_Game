@@ -12,11 +12,7 @@ var trace_grammar = require('./trace_grammar');	//grammar for tracery kept in se
 var grammar = tracery.createGrammar(trace_grammar);
 grammar.addModifiers(tracery.baseEngModifiers); 
 
-console.log(grammar.flatten('#origin#'));
-
 var T = new Twit(config);	//initializing twit with Clara's twitter account keys and tokens 
-
-var stream = T.stream('user');	//setting user stream for interaction features with Clara
 
 //function to check if the tweet went through or not
 function tweeted(err, data, response)
@@ -28,6 +24,7 @@ function tweeted(err, data, response)
 	}
 }
 
+//Claras_tweets();
 setInterval(Claras_tweets, 1000*60*60*7);		//every seven hours bot sends out a tweet
 
 function Claras_tweets(){
@@ -38,22 +35,37 @@ function Claras_tweets(){
 	T.post('statuses/update', tweet, tweeted);
 }
 
-stream.on('follow', followed);	//follow event call function followed
+var stream = T.stream('user');	//setting user stream for interaction features with Clara
 
-function followed(event){
-	console.log('someone just followed you');
-	var name = event.source.name;
-	var screen_name = event.source.screen_name;
+setInterval(make_friends, 1000*60*60*24);
 
-	follow_clara(' @' + screen_name + 'thanks for following me');
-}
+function make_friends()
+{
+	var check_followers = [];
 
-function follow_clara(txt){
-	var tweet = {
-		status : txt 
-	}
+	//check who follows you
+	T.get('followers/ids', { screen_name: 'skywardrown' },  function (err, data, response) {
+	check_followers = data.ids;
+	console.log(check_followers);
+	})
 
-	T.post('statuses/update', tweet, tweeted);
+	//check your friends
+	stream.on('friends', function (friendsMsg) {
+	console.log(friendsMsg);
+	for(var i = 0; i<=friendsMsg.friends.length;i++)
+		{	
+			for(var j = 0; j<=check_followers.length;j++)
+				{	
+					//if followers are not friends then friend them in their twitter face
+					if(check_followers[j] != friendsMsg.friends[i])
+						{
+								T.post('friendships/create', { id: check_followers[j] },  function (err, data, response) {
+								console.log(data.name);
+								});
+						}
+				}
+		}
+	})
 }
 
 stream.on('tweet', reply_to_Clara);	//on tweet event call reply_to_clara
@@ -61,9 +73,10 @@ stream.on('tweet', reply_to_Clara);	//on tweet event call reply_to_clara
 function reply_to_Clara(event){
 	console.log('someone just replied to you');
 
-	var fs = require('fs');
-	var json = JSON.stringify(event, null, 2);
-	fs.writeFile("tweet.json",json)	
+	//write a json file to read metadata with ease
+	//var fs = require('fs');
+	//var json = JSON.stringify(event, null, 2);
+	//fs.writeFile("tweet.json",json);
 
 	//get all the required information from the reply meta data
 	var replyto = event.in_reply_to_screen_name;
@@ -72,20 +85,21 @@ function reply_to_Clara(event){
 
 	var hastag = [];
 	for(var i = 0; i<event.entities.hashtags.length;i++)
-		hastag[i] = event.entities.hashtags[i].text	
+		hastag[i] = event.entities.hashtags[i].text;
 
 	var favourite = event.favorited;
-	var retweet = event.retweeted	
+	var retweet = event.retweeted;
 	console.log('replyto: ' + replyto + ' text: ' + text + ' from: ' + from)	
 	for(var i = 0; i<event.entities.hashtags.length;i++)
 		console.log(' hastag: ' + hastag[i]);
 
-	Clara_reply(text,replyto,from,hastag,favourite,retweet);
+//	Clara_reply(text);
 }
 
-function Clara_reply(txt,replyto,from,hastag,favourite,retweet){
+function Clara_reply(reply, hastag){
 	var tweet = {
-		status : txt 
+		status : reply + hastag
 	}
-}
 
+	T.post('statuses/update', tweet, tweeted);
+}
