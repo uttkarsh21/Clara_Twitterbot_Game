@@ -4,7 +4,7 @@ var Twit = require('twit');	//twit being used to interact with twitter's API
 
 var config = require('./config');	//all the keys and tokens requred to initialize twit with twitter's API
 
-var tracery = require('tracery-grammar');	//tracery node version needed to make grammar for bots "nonsense" talk
+var tracery = require('tracery-grammar');	//tracery node version needed to make grammar for bot's tweets'
 
 var trace_grammar = require('./trace_grammar');	//grammar for tracery kept in seperate file
 
@@ -16,9 +16,29 @@ console.log(grammar.flatten('#origin#'));
 
 var T = new Twit(config);	//initializing twit with Clara's twitter account keys and tokens 
 
-var stream = T.stream('user');
+var stream = T.stream('user');	//setting user stream for interaction features with Clara
 
-stream.on('follow', followed);
+//function to check if the tweet went through or not
+function tweeted(err, data, response)
+{
+	if(err)
+		console.log('I think something went wrong');
+	else {
+		console.log('tweeted-' + data.text);
+	}
+}
+
+setInterval(Claras_tweets, 1000*60*60*7);		//every seven hours bot sends out a tweet
+
+function Claras_tweets(){
+	var tweet = {
+		status: grammar.flatten('#origin#')
+	}
+
+	T.post('statuses/update', tweet, tweeted);
+}
+
+stream.on('follow', followed);	//follow event call function followed
 
 function followed(event){
 	console.log('someone just followed you');
@@ -34,23 +54,17 @@ function follow_clara(txt){
 	}
 
 	T.post('statuses/update', tweet, tweeted);
-
-	function tweeted(err, data, response){
-		if(err)
-			console.log('I think something went wrong');
-		else
-			console.log('tweeted!' + status);
-		}
 }
 
-stream.on('tweet', replied);
+stream.on('tweet', reply_to_Clara);	//on tweet event call reply_to_clara
 
-function replied(event){
+function reply_to_Clara(event){
 	console.log('someone just replied to you');
 
-	//var fs = require('fs');
-	//var json = JSON.stringify(event, null, 2);
-	//fs.writeFile("tweet.json",json)	
+	var fs = require('fs');
+	var json = JSON.stringify(event, null, 2);
+	fs.writeFile("tweet.json",json)	
+
 	//get all the required information from the reply meta data
 	var replyto = event.in_reply_to_screen_name;
 	var text = event.text;
@@ -66,39 +80,12 @@ function replied(event){
 	for(var i = 0; i<event.entities.hashtags.length;i++)
 		console.log(' hastag: ' + hastag[i]);
 
-	reply_clara(text,replyto,from,hastag,favourite,retweet);
+	Clara_reply(text,replyto,from,hastag,favourite,retweet);
 }
 
-function reply_clara(txt,replyto,from,hastag,favourite,retweet){
+function Clara_reply(txt,replyto,from,hastag,favourite,retweet){
 	var tweet = {
 		status : txt 
 	}
-
-	T.post('statuses/update', tweet, tweeted);
-
-	function tweeted(err, data, response)
-	{
-		if(err)
-			console.log('I think something went wrong');
-		else
-			console.log('tweeted!' + status);
-	}
 }
 
-//setInterval(Claras_tweets, 1000*60*60*7);
-
-function Claras_tweets(){
-	var tweet = {
-		status: grammar.flatten('#origin#')
-	}
-
-	T.post('statuses/update', tweet, tweeted);
-
-	function tweeted(err, data, response)
-	{
-		if(err)
-			console.log('I think something went wrong');
-		else
-			console.log('tweeted!' + status);
-	}
-}
