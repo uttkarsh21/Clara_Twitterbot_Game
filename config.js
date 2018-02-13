@@ -1,3 +1,4 @@
+//keys kept blank for privacy
 module.exports = {
   consumer_key:         '***',
   consumer_secret:      '***',
