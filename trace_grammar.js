@@ -1,5 +1,15 @@
 module.exports = {
-  'animal': ['panda','fox','cat'],
-  'emotion': ['sad','happy','angry'],
-  'origin':['I am #emotion.a# #animal#.'],
+  'reply': ['panda','fox','cat'],
+  'tweet': ['sad','happy','angry'],
+  'follow':[],
+  'directmsg':[],
+  'hint':[],
+  'hashtags':[],
+  'doctor':[],
+  'travel':[],
+  'adventure':[],
+  'origintweet':['I am #reply.a# #tweet#.'],
+  'originreply':[],
+  'origindm':[],
+  'originfollow':[],
 }
