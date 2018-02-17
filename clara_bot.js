@@ -36,6 +36,8 @@ function Claras_tweets(){
 	}
 
 	T.post('statuses/update', tweet, tweeted);
+
+	//find tweet
 }
 
 //========================================
@@ -82,9 +84,9 @@ function reply_to_Clara(event){
 //	check flag and Clara_reply(text);
 }
 
-function Clara_reply(reply, hastag){
+function Clara_reply(reply, hashtag){
 	var tweet = {
-		status : reply + hastag
+		status : reply + ' #' + hashtag 
 	}
 
 	T.post('statuses/update', tweet, tweeted);
@@ -102,13 +104,17 @@ function make_friends()
 {
 var friends = [];
 var check_followers = [];
+var follower_screen_name = [];
 var not_friend = true;
 
 //check who follows you
 T.get('followers/list', { screen_name: 'skywardrown' }, function (err, data, response){
 
 	for(var i = 0; i<data.users.length; i++)
+		{
 		check_followers[i] = data.users[i].id_str;
+		follower_screen_name[i] = data.users[i].screen_name;
+		}
 
 	//check your friends
 	T.get('friends/list', {screen_name: 'skywardrown'}, function (err, data, response) {
@@ -202,31 +208,31 @@ function post_dm(winner,loser,param)
 //It looks for tweets online that it likes
 //========================================
 
-function random_tweet(some_array)
+function random_tweet(some_array_length)
 {
-	var index = Math.floor(Math.random()*some_array.length);
-	return some_array[index];
+	var index = Math.floor(Math.random()*some_array_length);
+	return index;
 }
-
-function find_tweet()
+//find_tweet('#DoctorWho');
+function find_tweet(what_hashtag)
 {
 	var params = {
-        q: '#DoctorWho',  // REQUIRED
+        q: what_hashtag,  // REQUIRED
         result_type: 'mixed',
         lang: 'en'
     }
 	  T.get('search/tweets', params, function(err, data) {
-		console.log('found ');
+		//console.log(data);
 		
-		var tweet;
+		var tweet =[];
 
 		for(var i = 0; i<data.statuses.length; i++)
 			{
-				if(data.statuses[i].favorite_count > 333 && data.statuses[i].entities.urls.length > 0)
-					console.log(data.statuses[i]);
-					//tweet[i] = data.statuses[i];
+				if(data.statuses[i].favorite_count > 500)
+					tweet[i] = data.statuses[i];
 			}
-		//console.log(tweet);
+		var index = random_tweet(tweet.length);
+		console.log(tweet[index].id_str);
 	  });
 
 	
@@ -266,7 +272,7 @@ function favourite(id_str)
 //It checks winners
 //==============================
 
-check_winners('963527237453697026');
+//check_winners('963527237453697026');
 
 function check_winners(id_str)
 {
