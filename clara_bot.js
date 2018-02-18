@@ -177,8 +177,6 @@ stream.on('direct_message', dm_clara);
 function dm_clara(directMsg){
 	console.log(directMsg.direct_message.text);
 
-	var param_dm;
-
 	var hashtag_here = directMsg.direct_message.entities.hashtags;
 
 	for(var i = 0; i < directMsg.direct_message.entities.hashtags.length;i++)
@@ -198,7 +196,7 @@ function dm_clara(directMsg){
 			}
 		else
 			{
-				param_dm = {
+			var param_dm = {
 						"event": {
 				    		"type": "message_create",
 				    		"message_create": {
@@ -214,12 +212,12 @@ function dm_clara(directMsg){
 
 				if(directMsg.direct_message.sender_id_str != '961297109726257153')
 					setTimeout(posting, 10000);
+				
+				function posting()
+					{
+						post_dm(param_dm);
+					}
 			}
-
-	function posting()
-	{
-		post_dm(param_dm);
-	}
 }
 
 function post_dm(param)
@@ -318,11 +316,9 @@ function check_winners(id_str)
 		console.log('winners member');
 		console.log(data);
 
-		var param_dm;
-
 		if(data.errors == undefined)	//if member then send dm for already winner
 			{
-			param_dm = {
+			var param_dm = {
 					"event": {
 			    		"type": "message_create",
 			    		"message_create": {
@@ -330,51 +326,72 @@ function check_winners(id_str)
 			    		    "recipient_id": id_str
 			    		 	},
 			    		  "message_data": {
-			    		    "text": grammar.flatten('#origintweet#'),
+			    		    "text": grammar.flatten('#originalreadywon#'),
 			    			}
 			   			}
 			 			}
 					}
 
 			setTimeout(posting, 10000);
+
+			function posting()
+				{
+					post_dm(param_dm)
+				}
 			}
 		else	//else send dm for becoming winner
 			{
-				param_dm = {
-						"event": {
-				    		"type": "message_create",
-				    		"message_create": {
-				    		  "target": {
-				    		    "recipient_id": id_str
-				    		 	},
-				    		  "message_data": {
-				    		    "text": grammar.flatten('#origintweet#'),
-				    			}
-				   			}
-				 			}
-						}
-
 				T.get('lists/members/show', {list_id: '964582257154560001', user_id: id_str}, function(err,data,response){
-					if(data.errors == undefined)
-						{
-							console.log('in loser remove from loser they be winner now');
-							remove_loser(id_str);
-						}
-					else
-						{
-							console.log('not in loser no need to remove from loser since they not be in it');
-						}
+
+				var param_dm;
+				
+				if(data.errors == undefined)
+					{
+						param_dm = {
+								"event": {
+						    		"type": "message_create",
+						    		"message_create": {
+						    		  "target": {
+						    		    "recipient_id": id_str
+						    		 	},
+						    		  "message_data": {
+						    		    "text": 'You figured it out, FINALLY!! HUZZAH you win!!',
+						    			}
+						   			}
+						 			}
+								}
+
+						console.log('in loser remove from loser they be winner now');
+						remove_loser(id_str);
+					}
+				else
+					{
+						param_dm = {
+								"event": {
+						    		"type": "message_create",
+						    		"message_create": {
+						    		  "target": {
+						    		    "recipient_id": id_str
+						    		 	},
+						    		  "message_data": {
+						    		    "text": 'I am a bot, you win',
+						    			}
+						   			}
+						 			}
+								}
+						console.log('not in loser no need to remove from loser since they not be in it');
+					}
+
+				setTimeout(posting, 10000);
+
+				function posting()
+					{
+						post_dm(param_dm)
+					}
 				});
 				
 				add_winner(id_str);
-
-				setTimeout(posting, 10000);
 			}
-
-	function posting()
-	{
-		post_dm(param_dm)
-	}
 	});
 }
 
@@ -391,42 +408,10 @@ function check_losers(id_str)
 
 	T.get('lists/members/show', param, function(err,data,response){
 		console.log('losers member');
-		
-		var param_dm = {
-		"event": {
-    		"type": "message_create",
-    		"message_create": {
-    		  "target": {
-    		    "recipient_id": id_str
-    		 	},
-    		  "message_data": {
-    		    "text": grammar.flatten('#origintweet#'),
-    			}
-   			}
- 			}
-		}
 
 		if(data.errors == undefined)	//if member then send dm for already loser
 			{
-			param_dm = {
-					"event": {
-			    		"type": "message_create",
-			    		"message_create": {
-			    		  "target": {
-			    		    "recipient_id": id_str
-			    		 	},
-			    		  "message_data": {
-			    		    "text": grammar.flatten('#origintweet#'),
-			    			}
-			   			}
-			 			}
-					}
-
-			setTimeout(posting, 10000);
-			}
-		else	//else send dm for becoming loser
-			{
-				param_dm = {
+			var param_dm = {
 						"event": {
 				    		"type": "message_create",
 				    		"message_create": {
@@ -434,31 +419,73 @@ function check_losers(id_str)
 				    		    "recipient_id": id_str
 				    		 	},
 				    		  "message_data": {
-				    		    "text": grammar.flatten('#origintweet#'),
+				    		    "text": grammar.flatten('#originalreadylost#'),
 				    			}
 				   			}
 				 			}
 						}
 
-				T.get('lists/members/show', {list_id: '964582121015783424', user_id: id_str}, function(err,data,response){
-					if(data.errors == undefined)
-						{
-							console.log('already in winners cant be loser');
-						}
-					else
-						{
-							console.log('not already in winners can be loser');
-							add_loser(id_str);
-						}
-				});
-
-				setTimeout(posting, 10000);
-			}
+			setTimeout(posting, 10000);
 			
-	function posting()
-	{
-		post_dm(param_dm)
-	}
+			function posting()
+				{
+					post_dm(param_dm)
+				}
+			}
+		else	//else send dm for becoming loser
+			{
+				T.get('lists/members/show', {list_id: '964582121015783424', user_id: id_str}, function(err,data,response){
+
+				var param_dm ;
+					
+				if(data.errors == undefined)
+					{
+						param_dm = {
+									"event": {
+							    		"type": "message_create",
+							    		"message_create": {
+							    		  "target": {
+							    		    "recipient_id": id_str
+							    		 	},
+							    		  "message_data": {
+							    		    "text": 'you know the truth, you have already won',
+							    			}
+							   			}
+							 			}
+									}
+
+						console.log('already in winners cant be loser');
+
+						setTimeout(posting, 10000);
+					}
+				else
+					{
+						param_dm = {
+									"event": {
+							    		"type": "message_create",
+							    		"message_create": {
+							    		  "target": {
+							    		    "recipient_id": id_str
+							    		 	},
+							    		  "message_data": {
+							    		    "text": 'What is it to be human? you have lost, try again',
+							    			}
+							   			}
+							 			}
+									}
+									
+						console.log('not already in winners can be loser');
+						add_loser(id_str);
+
+						setTimeout(posting, 10000);
+					}
+
+				function posting()
+					{
+						post_dm(param_dm)
+					}
+				});
+			}
 	});
 }
 
