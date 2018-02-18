@@ -28,17 +28,31 @@ function tweeted(err, data, response)
 //It Tweets
 //========================================
 
+function random_tweet(some_array_length)
+{
+	var index = Math.floor(Math.random()*some_array_length);
+	return index;
+}
+
 setInterval(Claras_tweets, 1000*60*60*7);		//every seven hours bot sends out a tweet
+
+Claras_tweets();
 
 function Claras_tweets(){
 	var tweet = {
 		status: grammar.flatten('#origintweet#')
 	}
 
-	T.post('statuses/update', tweet, tweeted);
+	//T.post('statuses/update', tweet, tweeted);
 
-	//find tweet
+//	setTimeout(finding_tweet, 100);
 }
+
+function finding_tweet()
+{
+	find_tweet(grammar.flatten('#originhastags#'));
+}
+
 
 //========================================
 
@@ -72,11 +86,8 @@ function reply_to_Clara(event){
 	for(var i = 0; i<event.entities.hashtags.length;i++)
 	{
 		console.log(' hastag: ' + hastag[i]);
-		if(hastag[i].toLowerCase() == 'youarebot' || hastag[i].toLowerCase() == 'revealyourself' || hastag[i].toLowerCase() == 'whatareyou')
-			console.log(' hastag: ' + hastag[i]);
-			//call clara reply and add flag
 
-		if(hastag[i] == 'DoctorWho' || hastag[i] == 'TARDIS')
+		if(hastag[i] == 'DoctorWho' || hastag[i] == 'TARDIS' || hastag[i] == 'Gallifrey')
 			console.log(' hastag: ' + hastag[i]);
 			favourite(idstr);
 	}
@@ -141,6 +152,7 @@ T.get('followers/list', { screen_name: 'skywardrown' }, function (err, data, res
 
 			console.log('not friend ' + not_friend);
 			console.log('which follower ' + check_followers[i]);
+
 			//if follower not friend then friend them in their twitter face
 			if(not_friend)
 				{
@@ -163,42 +175,55 @@ stream.on('direct_message', dm_clara);
 
 
 function dm_clara(directMsg){
-	console.log(directMsg);
+	console.log(directMsg.direct_message.text);
 
-	var param_dm = {
-		"event": {
-    		"type": "message_create",
-    		"message_create": {
-    		  "target": {
-    		    "recipient_id": directMsg.direct_message.sender_id_str
-    		 	},
-    		  "message_data": {
-    		    "text": grammar.flatten('#origintweet#'),
-    			}
-   		}
- 		}
-	}
+	var param_dm;
+
+	var hashtag_here = directMsg.direct_message.entities.hashtags;
 
 	for(var i = 0; i < directMsg.direct_message.entities.hashtags.length;i++)
-		if(directMsg.direct_message.entities.hashtags[i].toLowerCase() == 'youarebot' || directMsg.direct_message.entities.hashtags[i].toLowerCase() == 'revealyourself' || directMsg.direct_message.entities.hashtags[i].toLowerCase() == 'whoareyou')
-			console.log('postdm ')
+		if(hashtag_here[i].text.toLowerCase() == 'youarebot' || hashtag_here[i].text.toLowerCase() == 'revealyourself' || hashtag_here[i].text.toLowerCase() == 'whoareyou')
+			{
+				console.log('you win ');
 
-	if(directMsg.direct_message.sender_id_str != '961297109726257153')
-		setTimeout(posting, 10000);
+				if(directMsg.direct_message.sender_id_str != '961297109726257153')
+					check_winners(directMsg.direct_message.sender_id_str);
+			}
+		else if(hashtag_here[i].text == 'realclara')
+			{
+				console.log('you lose ');
+
+				if(directMsg.direct_message.sender_id_str != '961297109726257153')
+					check_losers(directMsg.direct_message.sender_id_str);
+			}
+		else
+			{
+				param_dm = {
+						"event": {
+				    		"type": "message_create",
+				    		"message_create": {
+				    		  "target": {
+				    		    "recipient_id": directMsg.direct_message.sender_id_str
+				    		 	},
+				    		  "message_data": {
+				    		    "text": grammar.flatten('#origintweet#'),
+				    			}
+				   		}
+				 		}
+					}
+
+				if(directMsg.direct_message.sender_id_str != '961297109726257153')
+					setTimeout(posting, 10000);
+			}
 
 	function posting()
 	{
-		post_dm(false,false,param_dm)
+		post_dm(param_dm)
 	}
 }
 
-function post_dm(winner,loser,param)
+function post_dm(param)
 {
-	if(winner)
-		console.log('winner');
-	else if(loser)
-		console.log('loser')
-	else
 		T.post('direct_messages/events/new', param, function(msgSent){
 				console.log('sent');
 			});
@@ -208,33 +233,40 @@ function post_dm(winner,loser,param)
 //It looks for tweets online that it likes
 //========================================
 
-function random_tweet(some_array_length)
-{
-	var index = Math.floor(Math.random()*some_array_length);
-	return index;
-}
 //find_tweet('#DoctorWho');
-function find_tweet(what_hashtag)
+
+function find_tweet(query)
 {
+	console.log('query is ' + query);
+
 	var params = {
-        q: what_hashtag,  // REQUIRED
+        q: query + ' -filter:retweets',  // REQUIRED
         result_type: 'mixed',
+		  count: '99',
         lang: 'en'
     }
 	  T.get('search/tweets', params, function(err, data) {
 		//console.log(data);
 		
 		var tweet =[];
+		var count = 0;
 
 		for(var i = 0; i<data.statuses.length; i++)
 			{
-				if(data.statuses[i].favorite_count > 500)
-					tweet[i] = data.statuses[i];
+				if(data.statuses[i].favorite_count > 100)
+					{
+						tweet[count] = data.statuses[i];
+						console.log(data.statuses[i].text);
+								console.log(' ');
+					count++;
+					}
 			}
 		var index = random_tweet(tweet.length);
-		console.log(tweet[index].id_str);
-	  });
 
+		console.log(tweet.length)
+
+		//retweet(tweet[index])
+	  });
 	
 }
 
@@ -286,30 +318,48 @@ function check_winners(id_str)
 		console.log('winners member');
 		console.log(data);
 
-		var param_dm = {
-		"event": {
-    		"type": "message_create",
-    		"message_create": {
-    		  "target": {
-    		    "recipient_id": id_str
-    		 	},
-    		  "message_data": {
-    		    "text": grammar.flatten('#origintweet#'),
-    			}
-   			}
- 			}
-		}
+		var param_dm;
 
-		if(data.errors == undefined)	//if member then send dm for winner
+		if(data.errors == undefined)	//if member then send dm for already winner
 			{
+			param_dm = {
+					"event": {
+			    		"type": "message_create",
+			    		"message_create": {
+			    		  "target": {
+			    		    "recipient_id": id_str
+			    		 	},
+			    		  "message_data": {
+			    		    "text": grammar.flatten('#origintweet#'),
+			    			}
+			   			}
+			 			}
+					}
+
 			setTimeout(posting, 10000);
 			}
-		else	//else send dm for not winner ie normal dm
-			setTimeout(posting, 10000);
+		else	//else send dm for becoming winner
+			{
+				param_dm = {
+						"event": {
+				    		"type": "message_create",
+				    		"message_create": {
+				    		  "target": {
+				    		    "recipient_id": id_str
+				    		 	},
+				    		  "message_data": {
+				    		    "text": grammar.flatten('#origintweet#'),
+				    			}
+				   			}
+				 			}
+						}
+
+				setTimeout(posting, 10000);
+			}
 
 	function posting()
 	{
-		post_dm(false,false,param_dm)
+		post_dm(param_dm)
 	}
 	});
 }
@@ -342,16 +392,79 @@ function check_losers(id_str)
  			}
 		}
 
-		if(data.errors == undefined)	//if member then send dm for loser
+		if(data.errors == undefined)	//if member then send dm for already loser
 			{
+			param_dm = {
+					"event": {
+			    		"type": "message_create",
+			    		"message_create": {
+			    		  "target": {
+			    		    "recipient_id": id_str
+			    		 	},
+			    		  "message_data": {
+			    		    "text": grammar.flatten('#origintweet#'),
+			    			}
+			   			}
+			 			}
+					}
+
 			setTimeout(posting, 10000);
 			}
-		else	//else send dm for not loser ie normal dm
-			setTimeout(posting, 10000);
+		else	//else send dm for becoming loser
+			{
+				param_dm = {
+						"event": {
+				    		"type": "message_create",
+				    		"message_create": {
+				    		  "target": {
+				    		    "recipient_id": id_str
+				    		 	},
+				    		  "message_data": {
+				    		    "text": grammar.flatten('#origintweet#'),
+				    			}
+				   			}
+				 			}
+						}
 
+				setTimeout(posting, 10000);
+			}
+			
 	function posting()
 	{
-		post_dm(false,false,param_dm)
+		post_dm(param_dm)
 	}
+	});
+}
+
+//==============================
+//It adds to losers list
+//==============================
+
+function add_loser(id_str)
+{
+	T.post('lists/members/create', {list_id: '964582257154560001', user_id: id_str}, function (err,data,reponse){
+		console.log('added to loser list: ' + id_str);
+	});
+}
+
+//==============================
+//It removes from losers list
+//==============================
+
+function remove_loser(id_str)
+{
+	T.post('lists/members/destroy', {list_id: '964582257154560001', user_id: id_str}, function (err,data,reponse){
+		console.log('removed from loser list: ' + id_str);
+	});
+}
+
+//==============================
+//It adds to winners list
+//==============================
+
+function add_winner(id_str)
+{
+	T.post('lists/members/create', {list_id: '964582121015783424', user_id: id_str}, function (err,data,reponse){
+		console.log('added to winner list: ' + id_str);
 	});
 }
