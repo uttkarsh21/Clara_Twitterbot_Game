@@ -189,7 +189,7 @@ function dm_clara(directMsg){
 				if(directMsg.direct_message.sender_id_str != '961297109726257153')
 					check_winners(directMsg.direct_message.sender_id_str);
 			}
-		else if(hashtag_here[i].text == 'realclara')
+		else if(hashtag_here[i].text.toLowerCase() == 'realclara')
 			{
 				console.log('you lose ');
 
@@ -218,15 +218,15 @@ function dm_clara(directMsg){
 
 	function posting()
 	{
-		post_dm(param_dm)
+		post_dm(param_dm);
 	}
 }
 
 function post_dm(param)
 {
-		T.post('direct_messages/events/new', param, function(msgSent){
-				console.log('sent');
-			});
+	T.post('direct_messages/events/new', param, function(msgSent){
+			console.log('sent');
+		});
 }
 
 //========================================
@@ -354,6 +354,20 @@ function check_winners(id_str)
 				 			}
 						}
 
+				T.get('lists/members/show', {list_id: '964582257154560001', user_id: id_str}, function(err,data,response){
+					if(data.errors == undefined)
+						{
+							console.log('in loser remove from loser they be winner now');
+							remove_loser(id_str);
+						}
+					else
+						{
+							console.log('not in loser no need to remove from loser since they not be in it');
+						}
+				});
+				
+				add_winner(id_str);
+
 				setTimeout(posting, 10000);
 			}
 
@@ -425,6 +439,18 @@ function check_losers(id_str)
 				   			}
 				 			}
 						}
+
+				T.get('lists/members/show', {list_id: '964582121015783424', user_id: id_str}, function(err,data,response){
+					if(data.errors == undefined)
+						{
+							console.log('already in winners cant be loser');
+						}
+					else
+						{
+							console.log('not already in winners can be loser');
+							add_loser(id_str);
+						}
+				});
 
 				setTimeout(posting, 10000);
 			}
