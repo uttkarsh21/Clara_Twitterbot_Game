@@ -36,21 +36,35 @@ function random_tweet(some_array_length)
 
 setInterval(Claras_tweets, 1000*60*60*7);		//every seven hours bot sends out a tweet
 
-Claras_tweets();
-
-function Claras_tweets(){
+function Claras_tweets()
+{
 	var tweet = {
 		status: grammar.flatten('#origintweet#')
 	}
 
-	//T.post('statuses/update', tweet, tweeted);
+	T.post('statuses/update', tweet, tweeted);
 
-//	setTimeout(finding_tweet, 100);
+	setTimeout(finding_tweet, 1000*60);	//also find something to retweet along with OG tweet
 }
+
+var old_what_to_find;
+
+//setInterval(finding_tweet, 10000);
 
 function finding_tweet()
 {
-	find_tweet(grammar.flatten('#originhastags#'));
+	var current_what_to_find = grammar.flatten('#originhastags#');
+
+	//make sure that the current query to search is different than the last one
+	while(old_what_to_find == current_what_to_find)
+	{
+		console.log('update what to find');
+		current_what_to_find = grammar.flatten('#originhastags#');
+	}
+	
+	old_what_to_find = current_what_to_find;
+
+	find_tweet(current_what_to_find);
 }
 
 
@@ -64,7 +78,8 @@ var stream = T.stream('user');	//setting user stream for interaction features wi
 
 stream.on('tweet', reply_to_Clara);	//on tweet event call reply_to_clara
 
-function reply_to_Clara(event){
+function reply_to_Clara(event)
+{
 	console.log('someone just replied to you');
 
 	//write a json file to read metadata with ease
@@ -76,7 +91,7 @@ function reply_to_Clara(event){
 	var replyto = event.in_reply_to_screen_name;
 	var text = event.text;
 	var from = event.user.screen_name;
-	var idstr = event.user.id_str;
+	var idstr = event.id_str;
 
 	var hastag = [];
 	for(var i = 0; i<event.entities.hashtags.length;i++)
@@ -88,16 +103,25 @@ function reply_to_Clara(event){
 		console.log(' hastag: ' + hastag[i]);
 
 		if(hastag[i] == 'DoctorWho' || hastag[i] == 'TARDIS' || hastag[i] == 'Gallifrey')
+		{
 			console.log(' hastag: ' + hastag[i]);
 			favourite(idstr);
+		}
 	}
 
-//	check flag and Clara_reply(text);
+	//reply backs only when sender isn't bot and receiver is bot
+	if(event.user.id_str != '961297109726257153' && replyto == 'skywardrown')
+	{
+		Clara_reply('@' + from + ' ' + grammar.flatten('#originreply#'), idstr)
+	}
+
 }
 
-function Clara_reply(reply, hashtag){
+function Clara_reply(reply, reply_to_status)
+{
 	var tweet = {
-		status : reply + ' #' + hashtag 
+		status : reply,
+		in_reply_to_status_id: reply_to_status
 	}
 
 	T.post('statuses/update', tweet, tweeted);
@@ -122,46 +146,46 @@ var not_friend = true;
 T.get('followers/list', { screen_name: 'skywardrown' }, function (err, data, response){
 
 	for(var i = 0; i<data.users.length; i++)
-		{
+	{
 		check_followers[i] = data.users[i].id_str;
 		follower_screen_name[i] = data.users[i].screen_name;
-		}
+	}
 
 	//check your friends
 	T.get('friends/list', {screen_name: 'skywardrown'}, function (err, data, response) {
 	
-	for(var i = 0; i<data.users.length; i++)
-		friends[i] = data.users[i].id_str;
+		for(var i = 0; i<data.users.length; i++)
+			friends[i] = data.users[i].id_str;
 
-	console.log('friends testing  ' + data);
-	for(var i = 0; i<check_followers.length;i++)
+		console.log('friends testing  ' + data);
+		for(var i = 0; i<check_followers.length;i++)
 		{
 			console.log('follower ' + check_followers[i]);
 			not_friend = true;
 
 			for(var j = 0; j<friends.length;j++)
-				{	console.log('friend ' + friends[j]);
+			{	console.log('friend ' + friends[j]);
 
-					//mark if follower is friend or not
-					if(check_followers[i] == friends[j])
-						{
-							not_friend = false;
-							break;
-						}
+				//mark if follower is friend or not
+				if(check_followers[i] == friends[j])
+				{
+					not_friend = false;
+					break;
 				}
+			}
 
 			console.log('not friend ' + not_friend);
 			console.log('which follower ' + check_followers[i]);
 
 			//if follower not friend then friend them in their twitter face
 			if(not_friend)
-				{
-					T.post('friendships/create', { id: check_followers[i] },  function (err, data, response) {
-						console.log('friends ' + data.name);
+			{
+				T.post('friendships/create', { id: check_followers[i] },  function (err, data, response) {
+				console.log('friends ' + data.name);
 
-						//use clara reply here with follow rules grammar tracery
-					});
-				}
+				Clara_reply('@' + follower_screen_name[i] +  grammar.flatten('#originfollow#'), null);
+				});
+			}
 		}
 	});
 });
@@ -174,50 +198,61 @@ T.get('followers/list', { screen_name: 'skywardrown' }, function (err, data, res
 stream.on('direct_message', dm_clara);
 
 
-function dm_clara(directMsg){
+function dm_clara(directMsg)
+{
 	console.log(directMsg.direct_message.text);
 
 	var hashtag_here = directMsg.direct_message.entities.hashtags;
 
-	for(var i = 0; i < directMsg.direct_message.entities.hashtags.length;i++)
-		if(hashtag_here[i].text.toLowerCase() == 'youarebot' || hashtag_here[i].text.toLowerCase() == 'revealyourself' || hashtag_here[i].text.toLowerCase() == 'whoareyou')
+	var param_dm = {
+					"event": {
+			    		"type": "message_create",
+			    		"message_create": {
+			    		  "target": {
+			    		    "recipient_id": directMsg.direct_message.sender_id_str
+			    		 	},
+			    		  "message_data": {
+			    		    "text": grammar.flatten('#origindm#'),
+			    			}
+			   		}
+			 		}
+				}
+
+	if(directMsg.direct_message.entities.hashtags.length > 0)
+	{
+		for(var i = 0; i < directMsg.direct_message.entities.hashtags.length;i++)
+		{
+			if(hashtag_here[i].text.toLowerCase() == 'youarebot' || hashtag_here[i].text.toLowerCase() == 'revealyourself' || hashtag_here[i].text.toLowerCase() == 'whoareyou')
 			{
 				console.log('you win ');
 
 				if(directMsg.direct_message.sender_id_str != '961297109726257153')
 					check_winners(directMsg.direct_message.sender_id_str);
 			}
-		else if(hashtag_here[i].text.toLowerCase() == 'realclara')
+			else if(hashtag_here[i].text.toLowerCase() == 'realclara')
 			{
 				console.log('you lose ');
 
 				if(directMsg.direct_message.sender_id_str != '961297109726257153')
 					check_losers(directMsg.direct_message.sender_id_str);
 			}
-		else
+			else
 			{
-			var param_dm = {
-						"event": {
-				    		"type": "message_create",
-				    		"message_create": {
-				    		  "target": {
-				    		    "recipient_id": directMsg.direct_message.sender_id_str
-				    		 	},
-				    		  "message_data": {
-				    		    "text": grammar.flatten('#origintweet#'),
-				    			}
-				   		}
-				 		}
-					}
-
-				if(directMsg.direct_message.sender_id_str != '961297109726257153')
-					setTimeout(posting, 10000);
-				
-				function posting()
-					{
-						post_dm(param_dm);
-					}
+					if(directMsg.direct_message.sender_id_str != '961297109726257153')
+						setTimeout(posting, 10000);
 			}
+		}
+	}
+	else
+	{
+		if(directMsg.direct_message.sender_id_str != '961297109726257153')
+			setTimeout(posting, 10000);
+	}
+
+	function posting()
+	{
+		post_dm(param_dm);
+	}
 }
 
 function post_dm(param)
@@ -232,39 +267,63 @@ function post_dm(param)
 //========================================
 
 //find_tweet('#DoctorWho');
+var last_retweets = [];
 
 function find_tweet(query)
 {
 	console.log('query is ' + query);
 
 	var params = {
-        q: query + ' -filter:retweets',  // REQUIRED
-        result_type: 'mixed',
-		  count: '99',
-        lang: 'en'
-    }
-	  T.get('search/tweets', params, function(err, data) {
-		//console.log(data);
+	        q: query + ' -filter:retweets',  // REQUIRED
+	        result_type: 'mixed',
+			  count: '99',
+	        lang: 'en'
+	    }
+	
+	T.get('search/tweets', params, function(err, data) {
+	//console.log(data);
 		
-		var tweet =[];
-		var count = 0;
+	var tweet =[];
+	var count = 0;
 
-		for(var i = 0; i<data.statuses.length; i++)
-			{
-				if(data.statuses[i].favorite_count > 100)
-					{
-						tweet[count] = data.statuses[i];
-						console.log(data.statuses[i].text);
-								console.log(' ');
-					count++;
-					}
-			}
-		var index = random_tweet(tweet.length);
+	for(var i = 0; i<data.statuses.length; i++)
+	{
+		if(data.statuses[i].favorite_count > 100)
+		{
+			tweet[count] = data.statuses[i];
+			console.log(data.statuses[i].text);
+			console.log(' ');
+			count++;
+		}
+	}
 
-		console.log(tweet.length)
+	var index = random_tweet(tweet.length);
 
-		//retweet(tweet[index])
-	  });
+	//check last 5 retweets, if already retweeted the same before find a different tweet
+	for(var i = 0; i <last_retweets.length; i++)
+	{
+		var infi_count = 0;
+
+		while(tweet[index].id_str == last_retweets[i])
+		{
+			console.log('gotta get a different tweet to retweet');
+			index = random_tweet(tweet.length);
+
+			infi_count++;
+
+			//break out of while if taking too long;
+			//shouldn't happen other than case where only one tweet available to retweet and that is same as one of the last 3 retweets
+			if(infi_count > 50)
+				break;
+		}
+	}
+
+	random_tweet(tweet.length);
+
+	console.log('tweeting this ' + tweet[index].id_str);
+
+	retweet(tweet[index].id_str);
+	});
 	
 }
 
@@ -274,13 +333,25 @@ function find_tweet(query)
 
 function retweet(id_str)
 {
+	if(last_retweets.length < 3)
+		last_retweets.push(id_str);	//add to queue till smaller its smaller than 3
+	else
+	{
+		last_retweets.reverse();
+		last_retweets.pop();	//remove first index object in queue
+		last_retweets.reverse();
+		last_retweets.push(id_str);	//add to back of queue
+	}
 	
-	T.post('statuses/retweet/:id', {id: id_str}, function(err,response){
+	T.post('statuses/retweet/:id', {id: id_str}, function(err,data, response){
 		if(response)
-			console.log('retweeted ' + response);
+			console.log('retweeted ' + data.text);
 		else
 			console.log('something went wrong with the retweet');
 	});
+
+	//also favourite it for funsies
+	favourite(id_str);
 }
 
 
@@ -290,9 +361,9 @@ function retweet(id_str)
 
 function favourite(id_str)
 {
-	T.post('favorites/create', {id: id_str}, function(err,response){
+	T.post('favorites/create', {id: id_str}, function(err,data, response){
 		if(response)
-			console.log('favourited ' + response);
+			console.log('favourited ' + data.text);
 		else
 			console.log('something went wrong while favouriting a tweet');
 	});
@@ -317,81 +388,81 @@ function check_winners(id_str)
 		console.log(data);
 
 		if(data.errors == undefined)	//if member then send dm for already winner
+		{
+		var param_dm = {
+				"event": {
+		    		"type": "message_create",
+		    		"message_create": {
+		    		  "target": {
+		    		    "recipient_id": id_str
+		    		 	},
+		    		  "message_data": {
+		    		    "text": grammar.flatten('#originalreadywon#'),
+		    			}
+		   			}
+		 			}
+				}
+
+		setTimeout(posting, 10000);
+
+			function posting()
 			{
-			var param_dm = {
-					"event": {
-			    		"type": "message_create",
-			    		"message_create": {
-			    		  "target": {
-			    		    "recipient_id": id_str
-			    		 	},
-			    		  "message_data": {
-			    		    "text": grammar.flatten('#originalreadywon#'),
-			    			}
-			   			}
-			 			}
-					}
+				post_dm(param_dm)
+			}
+		}
+		else	//else send dm for becoming winner
+		{
+			T.get('lists/members/show', {list_id: '964582257154560001', user_id: id_str}, function(err,data,response){
+
+			var param_dm;
+			
+			if(data.errors == undefined)
+			{
+				param_dm = {
+						"event": {
+				    		"type": "message_create",
+				    		"message_create": {
+				    		  "target": {
+				    		    "recipient_id": id_str
+				    		 	},
+				    		  "message_data": {
+				    		    "text": 'You figured it out, FINALLY!! HUZZAH you win!!',
+				    			}
+				   		}
+						}
+				}
+
+				console.log('in loser remove from loser they be winner now');
+				remove_loser(id_str);
+			}
+			else
+			{
+				param_dm = {
+						"event": {
+				    		"type": "message_create",
+				    		"message_create": {
+				    		  "target": {
+				    		    "recipient_id": id_str
+				    		 	},
+				    		  "message_data": {
+				    		    "text": 'I am a bot, you win',
+				    			}
+				   		}
+						}
+				}
+				console.log('not in loser no need to remove from loser since they not be in it');
+			}
 
 			setTimeout(posting, 10000);
 
-			function posting()
+				function posting()
 				{
 					post_dm(param_dm)
 				}
-			}
-		else	//else send dm for becoming winner
-			{
-				T.get('lists/members/show', {list_id: '964582257154560001', user_id: id_str}, function(err,data,response){
-
-				var param_dm;
+			});
 				
-				if(data.errors == undefined)
-					{
-						param_dm = {
-								"event": {
-						    		"type": "message_create",
-						    		"message_create": {
-						    		  "target": {
-						    		    "recipient_id": id_str
-						    		 	},
-						    		  "message_data": {
-						    		    "text": 'You figured it out, FINALLY!! HUZZAH you win!!',
-						    			}
-						   			}
-						 			}
-								}
-
-						console.log('in loser remove from loser they be winner now');
-						remove_loser(id_str);
-					}
-				else
-					{
-						param_dm = {
-								"event": {
-						    		"type": "message_create",
-						    		"message_create": {
-						    		  "target": {
-						    		    "recipient_id": id_str
-						    		 	},
-						    		  "message_data": {
-						    		    "text": 'I am a bot, you win',
-						    			}
-						   			}
-						 			}
-								}
-						console.log('not in loser no need to remove from loser since they not be in it');
-					}
-
-				setTimeout(posting, 10000);
-
-				function posting()
-					{
-						post_dm(param_dm)
-					}
-				});
-				
-				add_winner(id_str);
-			}
+			add_winner(id_str);
+		}
 	});
 }
 
@@ -410,7 +481,7 @@ function check_losers(id_str)
 		console.log('losers member');
 
 		if(data.errors == undefined)	//if member then send dm for already loser
-			{
+		{
 			var param_dm = {
 						"event": {
 				    		"type": "message_create",
@@ -431,15 +502,15 @@ function check_losers(id_str)
 				{
 					post_dm(param_dm)
 				}
-			}
+		}
 		else	//else send dm for becoming loser
-			{
+		{
 				T.get('lists/members/show', {list_id: '964582121015783424', user_id: id_str}, function(err,data,response){
 
 				var param_dm ;
 					
 				if(data.errors == undefined)
-					{
+				{
 						param_dm = {
 									"event": {
 							    		"type": "message_create",
@@ -457,35 +528,35 @@ function check_losers(id_str)
 						console.log('already in winners cant be loser');
 
 						setTimeout(posting, 10000);
-					}
+				}
 				else
-					{
-						param_dm = {
-									"event": {
-							    		"type": "message_create",
-							    		"message_create": {
-							    		  "target": {
-							    		    "recipient_id": id_str
-							    		 	},
-							    		  "message_data": {
-							    		    "text": 'What is it to be human? you have lost, try again',
-							    			}
-							   			}
-							 			}
-									}
-									
-						console.log('not already in winners can be loser');
-						add_loser(id_str);
+				{
+					param_dm = {
+								"event": {
+						    		"type": "message_create",
+						    		"message_create": {
+						    		  "target": {
+						    		    "recipient_id": id_str
+						    		 	},
+						    		  "message_data": {
+						    		    "text": 'What is it to be human? you have lost, try again',
+						    			}
+						   			}
+						 			}
+								}
+								
+					console.log('not already in winners can be loser');
+					add_loser(id_str);
 
-						setTimeout(posting, 10000);
-					}
+					setTimeout(posting, 10000);
+				}
 
-				function posting()
-					{
-						post_dm(param_dm)
-					}
-				});
-			}
+			function posting()
+				{
+					post_dm(param_dm)
+				}
+			});
+		}
 	});
 }
 
