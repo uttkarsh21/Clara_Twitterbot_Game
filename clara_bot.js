@@ -112,9 +112,13 @@ function reply_to_Clara(event)
 	//reply backs only when sender isn't bot and receiver is bot
 	if(event.user.id_str != '961297109726257153' && replyto == 'skywardrown')
 	{
-		Clara_reply('@' + from + ' ' + grammar.flatten('#originreply#'), idstr)
+		setTimeout(replying, 1000*60);	//reply after a 60 second delay
 	}
 
+	function replying()
+	{
+		Clara_reply('@' + from + ' ' + grammar.flatten('#originreply#'), idstr)
+	}
 }
 
 function Clara_reply(reply, reply_to_status)
