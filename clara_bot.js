@@ -316,7 +316,7 @@ function find_tweet(query)
 			infi_count++;
 
 			//break out of while if taking too long;
-			//shouldn't happen other than case where only one tweet available to retweet and that is same as one of the last 3 retweets
+			//shouldn't happen other than case where only tweets available to retweet are same as one of the last 3 retweets
 			if(infi_count > 50)
 				break;
 		}
