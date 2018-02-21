@@ -12,6 +12,8 @@ var trace_grammar = require('./trace_grammar');	//grammar for tracery kept in se
 var grammar = tracery.createGrammar(trace_grammar);
 grammar.addModifiers(tracery.baseEngModifiers); 
 
+console.log(grammar.flatten('#origindm#'))
+
 var T = new Twit(config);	//initializing twit with Clara's twitter account keys and tokens 
 
 //function to check if the tweet went through or not
@@ -226,14 +228,14 @@ function dm_clara(directMsg)
 	{
 		for(var i = 0; i < directMsg.direct_message.entities.hashtags.length;i++)
 		{
-			if(hashtag_here[i].text.toLowerCase() == 'youarebot' || hashtag_here[i].text.toLowerCase() == 'revealyourself' || hashtag_here[i].text.toLowerCase() == 'whoareyou')
+			if(hashtag_here[i].text.toLowerCase() == 'smile' || hashtag_here[i].text.toLowerCase() == 'wonderwrite' || hashtag_here[i].text.toLowerCase() == 'yell' || hashtag_here[i].text.toLowerCase() == 'turn')
 			{
 				console.log('you win ');
 
 				if(directMsg.direct_message.sender_id_str != '961297109726257153')
 					check_winners(directMsg.direct_message.sender_id_str);
 			}
-			else if(hashtag_here[i].text.toLowerCase() == 'realclara')
+			else if(hashtag_here[i].text.toLowerCase() == 'nose' || hashtag_here[i].text.toLowerCase() == 'texas' || hashtag_here[i].text.toLowerCase() == 'diner')
 			{
 				console.log('you lose ');
 
@@ -449,7 +451,7 @@ function check_winners(id_str)
 				    		    "recipient_id": id_str
 				    		 	},
 				    		  "message_data": {
-				    		    "text": 'I am a bot, you win',
+				    		    "text": 'Yups you got it, you win. Take a suvery and tell me more: https://goo.gl/forms/TT1VrGSoFj4upFHV2',
 				    			}
 				   		}
 						}
@@ -543,7 +545,7 @@ function check_losers(id_str)
 						    		    "recipient_id": id_str
 						    		 	},
 						    		  "message_data": {
-						    		    "text": 'What is it to be human? you have lost, try again',
+						    		    "text": 'What is it to be human? you have lost, try again. Take the survey and let me know https://goo.gl/forms/TT1VrGSoFj4upFHV2',
 						    			}
 						   			}
 						 			}
