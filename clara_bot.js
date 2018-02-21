@@ -105,7 +105,7 @@ function reply_to_Clara(event)
 		if(hastag[i] == 'DoctorWho' || hastag[i] == 'TARDIS' || hastag[i] == 'Gallifrey')
 		{
 			console.log(' hastag: ' + hastag[i]);
-			favourite(idstr);
+			setTimeout(favorite_it, 1000*30);
 		}
 	}
 
@@ -113,6 +113,11 @@ function reply_to_Clara(event)
 	if(event.user.id_str != '961297109726257153' && replyto == 'skywardrown')
 	{
 		setTimeout(replying, 1000*60);	//reply after a 60 second delay
+	}
+
+	function favorite_it()
+	{
+		favourite(idstr);
 	}
 
 	function replying()
