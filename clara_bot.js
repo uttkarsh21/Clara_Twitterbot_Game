@@ -12,8 +12,6 @@ var trace_grammar = require('./trace_grammar');	//grammar for tracery kept in se
 var grammar = tracery.createGrammar(trace_grammar);
 grammar.addModifiers(tracery.baseEngModifiers); 
 
-console.log(grammar.flatten('#origindm#'))
-
 var T = new Twit(config);	//initializing twit with Clara's twitter account keys and tokens 
 
 //function to check if the tweet went through or not
