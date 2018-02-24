@@ -83,9 +83,9 @@ function reply_to_Clara(event)
 	console.log('someone just replied to you');
 
 	//write a json file to read metadata with ease
-	//var fs = require('fs');
-	//var json = JSON.stringify(event, null, 2);
-	//fs.writeFile("tweet.json",json);
+	var fs = require('fs');
+	var json = JSON.stringify(event, null, 2);
+	fs.writeFile("tweet.json",json);
 
 	//get all the required information from the reply meta data
 	var replyto = event.in_reply_to_screen_name;
@@ -435,7 +435,7 @@ function check_winners(id_str)
 				    		    "recipient_id": id_str
 				    		 	},
 				    		  "message_data": {
-				    		    "text": 'You figured it out, FINALLY!! HUZZAH you win!!',
+				    		    "text": 'You figured it out, FINALLY!! This is a game. HUZZAH you win!! Take a suvery and tell me more: https://goo.gl/forms/TT1VrGSoFj4upFHV2',
 				    			}
 				   		}
 						}
@@ -454,7 +454,7 @@ function check_winners(id_str)
 				    		    "recipient_id": id_str
 				    		 	},
 				    		  "message_data": {
-				    		    "text": 'Yups you got it, you win. Take a suvery and tell me more: https://goo.gl/forms/TT1VrGSoFj4upFHV2',
+				    		    "text": 'Yups you got it, this was a game you win. Take a suvery and tell me more: https://goo.gl/forms/TT1VrGSoFj4upFHV2',
 				    			}
 				   		}
 						}
@@ -548,7 +548,7 @@ function check_losers(id_str)
 						    		    "recipient_id": id_str
 						    		 	},
 						    		  "message_data": {
-						    		    "text": 'What is it to be human? you have lost, try again. Take the survey and let me know https://goo.gl/forms/TT1VrGSoFj4upFHV2',
+						    		    "text": 'You have lost coz that clue is important to me, google Clara Oswald youll know. You need the gibberish clues to win, try again. Take the survey and let me know https://goo.gl/forms/TT1VrGSoFj4upFHV2',
 						    			}
 						   			}
 						 			}
